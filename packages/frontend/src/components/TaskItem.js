@@ -47,7 +47,7 @@ const TaskItem = ({ task, onToggleComplete, onEdit, onDelete }) => {
       <CardContent sx={{ pb: 1 }}>
         <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
           <Checkbox
-            checked={task.completed}
+            checked={Boolean(task.completed)}
             onChange={() => onToggleComplete(task.id)}
             color="primary"
             sx={{ mt: -1 }}

@@ -3,7 +3,14 @@ import PropTypes from 'prop-types';
 import { Box, Typography, CircularProgress } from '@mui/material';
 import TaskItem from './TaskItem';
 
-const TaskList = ({ tasks, loading, error, onToggleComplete, onEdit, onDelete }) => {
+const TaskList = ({ 
+  tasks, 
+  loading = false, 
+  error = null, 
+  onToggleComplete, 
+  onEdit, 
+  onDelete 
+}) => {
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
@@ -62,11 +69,6 @@ TaskList.propTypes = {
   onToggleComplete: PropTypes.func.isRequired,
   onEdit: PropTypes.func.isRequired,
   onDelete: PropTypes.func.isRequired,
-};
-
-TaskList.defaultProps = {
-  loading: false,
-  error: null,
 };
 
 export default TaskList;

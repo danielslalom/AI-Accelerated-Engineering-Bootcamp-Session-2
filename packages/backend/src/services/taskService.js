@@ -2,11 +2,11 @@ const { db } = require('../database');
 
 // Validation functions
 const validateTitle = (title) => {
-  if (!title || typeof title !== 'string') {
+  if (title === null || title === undefined || typeof title !== 'string') {
     throw new Error('Title is required');
   }
   const trimmed = title.trim();
-  if (trimmed.length === 0) {
+  if (trimmed === '') {
     throw new Error('Title cannot be empty');
   }
   if (trimmed.length > 100) {

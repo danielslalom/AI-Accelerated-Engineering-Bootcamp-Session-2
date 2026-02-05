@@ -45,21 +45,25 @@ describe('Task API Endpoints', () => {
     });
 
     it('should return 400 for missing title', async () => {
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
       const response = await request(app)
         .post('/api/tasks')
         .send({ description: 'No title' });
 
       expect(response.status).toBe(400);
       expect(response.body.error).toBeDefined();
+      consoleSpy.mockRestore();
     });
 
     it('should return 400 for invalid priority', async () => {
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
       const response = await request(app)
         .post('/api/tasks')
         .send({ title: 'Test', priority: 'urgent' });
 
       expect(response.status).toBe(400);
       expect(response.body.error).toContain('Priority');
+      consoleSpy.mockRestore();
     });
   });
 
@@ -160,11 +164,13 @@ describe('Task API Endpoints', () => {
     });
 
     it('should return 400 for invalid data', async () => {
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
       const response = await request(app)
         .put(`/api/tasks/${taskId}`)
         .send({ priority: 'invalid' });
 
       expect(response.status).toBe(400);
+      consoleSpy.mockRestore();
     });
   });
 

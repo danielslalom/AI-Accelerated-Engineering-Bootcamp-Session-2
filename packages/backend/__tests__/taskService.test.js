@@ -1,15 +1,11 @@
 const Database = require('better-sqlite3');
-const taskService = require('../src/services/taskService');
 
-// Mock database for testing
-let db;
-let mockDb;
-
-beforeAll(() => {
-  // Create a test database
-  mockDb = new Database(':memory:');
+// Mock the database module before requiring taskService
+jest.mock('../src/database', () => {
+  const Database = require('better-sqlite3');
+  const mockTestDb = new Database(':memory:');
   
-  mockDb.exec(`
+  mockTestDb.exec(`
     CREATE TABLE tasks (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       title TEXT NOT NULL,
@@ -22,21 +18,22 @@ beforeAll(() => {
     )
   `);
   
-  // Replace the db export in the database module
-  jest.mock('../src/database', () => ({
-    db: mockDb,
-  }));
-  
-  db = require('../src/database').db;
+  return {
+    db: mockTestDb,
+  };
 });
+
+// Now require taskService - it will use our mocked database
+const taskService = require('../src/services/taskService');
+const { db } = require('../src/database');
 
 beforeEach(() => {
   // Clear tasks before each test
-  mockDb.prepare('DELETE FROM tasks').run();
+  db.prepare('DELETE FROM tasks').run();
 });
 
 afterAll(() => {
-  mockDb.close();
+  db.close();
 });
 
 describe('TaskService - Validation', () => {

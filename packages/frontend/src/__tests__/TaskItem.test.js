@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import TaskItem from '../components/TaskItem';
 
 describe('TaskItem Component', () => {
@@ -23,57 +23,81 @@ describe('TaskItem Component', () => {
   });
 
   it('should render task title', () => {
-    render(<TaskItem task={mockTask} {...mockHandlers} />);
+    act(() => {
+      render(<TaskItem task={mockTask} {...mockHandlers} />);
+    });
     expect(screen.getByText('Test Task')).toBeInTheDocument();
   });
 
   it('should render task description', () => {
-    render(<TaskItem task={mockTask} {...mockHandlers} />);
+    act(() => {
+      render(<TaskItem task={mockTask} {...mockHandlers} />);
+    });
     expect(screen.getByText('Test Description')).toBeInTheDocument();
   });
 
   it('should render priority chip', () => {
-    render(<TaskItem task={mockTask} {...mockHandlers} />);
+    act(() => {
+      render(<TaskItem task={mockTask} {...mockHandlers} />);
+    });
     expect(screen.getByText('high')).toBeInTheDocument();
   });
 
   it('should call onToggleComplete when checkbox is clicked', () => {
-    render(<TaskItem task={mockTask} {...mockHandlers} />);
+    act(() => {
+      render(<TaskItem task={mockTask} {...mockHandlers} />);
+    });
     const checkbox = screen.getByRole('checkbox');
-    fireEvent.click(checkbox);
+    act(() => {
+      fireEvent.click(checkbox);
+    });
     expect(mockHandlers.onToggleComplete).toHaveBeenCalledWith(1);
   });
 
   it('should call onEdit when edit button is clicked', () => {
-    render(<TaskItem task={mockTask} {...mockHandlers} />);
+    act(() => {
+      render(<TaskItem task={mockTask} {...mockHandlers} />);
+    });
     const editButton = screen.getByLabelText('Edit Test Task');
-    fireEvent.click(editButton);
+    act(() => {
+      fireEvent.click(editButton);
+    });
     expect(mockHandlers.onEdit).toHaveBeenCalledWith(mockTask);
   });
 
   it('should call onDelete when delete button is clicked', () => {
-    render(<TaskItem task={mockTask} {...mockHandlers} />);
+    act(() => {
+      render(<TaskItem task={mockTask} {...mockHandlers} />);
+    });
     const deleteButton = screen.getByLabelText('Delete Test Task');
-    fireEvent.click(deleteButton);
+    act(() => {
+      fireEvent.click(deleteButton);
+    });
     expect(mockHandlers.onDelete).toHaveBeenCalledWith(1);
   });
 
   it('should show completed style when task is completed', () => {
     const completedTask = { ...mockTask, completed: 1 };
-    render(<TaskItem task={completedTask} {...mockHandlers} />);
+    act(() => {
+      render(<TaskItem task={completedTask} {...mockHandlers} />);
+    });
     const checkbox = screen.getByRole('checkbox');
     expect(checkbox).toBeChecked();
   });
 
   it('should render without description', () => {
     const taskWithoutDesc = { ...mockTask, description: null };
-    render(<TaskItem task={taskWithoutDesc} {...mockHandlers} />);
+    act(() => {
+      render(<TaskItem task={taskWithoutDesc} {...mockHandlers} />);
+    });
     expect(screen.queryByText('Test Description')).not.toBeInTheDocument();
   });
 
   it('should render without due date', () => {
     const taskWithoutDueDate = { ...mockTask, due_date: null };
-    render(<TaskItem task={taskWithoutDueDate} {...mockHandlers} />);
+    act(() => {
+      render(<TaskItem task={taskWithoutDueDate} {...mockHandlers} />);
+    });
     expect(screen.queryByText(/Dec/)).not.toBeInTheDocument();
   });
 });

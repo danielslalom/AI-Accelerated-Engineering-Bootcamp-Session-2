@@ -14,7 +14,7 @@ import {
   Box,
 } from '@mui/material';
 
-const TaskForm = ({ open, onClose, onSubmit, initialTask }) => {
+const TaskForm = ({ open, onClose, onSubmit, initialTask = null }) => {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -184,10 +184,6 @@ TaskForm.propTypes = {
     due_date: PropTypes.string,
     priority: PropTypes.string,
   }),
-};
-
-TaskForm.defaultProps = {
-  initialTask: null,
 };
 
 export default TaskForm;
