@@ -1,126 +1,255 @@
-import React, { useState, useEffect } from 'react';
-import './App.css';
+import React, { useState, useEffect, useCallback } from 'react';
+import {
+  ThemeProvider,
+  CssBaseline,
+  Container,
+  AppBar,
+  Toolbar,
+  Typography,
+  Fab,
+  Snackbar,
+  Alert,
+  Box,
+} from '@mui/material';
+import { Add as AddIcon } from '@mui/icons-material';
+import theme from './theme';
+import TaskList from './components/TaskList';
+import TaskForm from './components/TaskForm';
+import TaskFilters from './components/TaskFilters';
+import ConfirmDialog from './components/ConfirmDialog';
+import axios from 'axios';
 
 function App() {
-  const [data, setData] = useState([]);
+  const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [newItem, setNewItem] = useState('');
+  
+  // Dialog states
+  const [formOpen, setFormOpen] = useState(false);
+  const [editTask, setEditTask] = useState(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [taskToDelete, setTaskToDelete] = useState(null);
+  
+  // Filter state
+  const [filters, setFilters] = useState({
+    status: 'all',
+    priority: 'all',
+    sortBy: 'created_at',
+    sortOrder: 'DESC',
+    search: '',
+  });
+  
+  // Snackbar state
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'success',
+  });
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
+  // Fetch tasks from API
+  const fetchTasks = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/items');
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
+      const params = {};
+      
+      if (filters.status !== 'all') {
+        params.status = filters.status;
       }
-      const result = await response.json();
-      setData(result);
+      if (filters.priority !== 'all') {
+        params.priority = filters.priority;
+      }
+      if (filters.search) {
+        params.search = filters.search;
+      }
+      params.sortBy = filters.sortBy;
+      params.sortOrder = filters.sortOrder;
+      
+      const response = await axios.get('/api/tasks', { params });
+      setTasks(response.data);
       setError(null);
     } catch (err) {
-      setError('Failed to fetch data: ' + err.message);
-      console.error('Error fetching data:', err);
+      setError('Failed to fetch tasks: ' + err.message);
+      console.error('Error fetching tasks:', err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters]);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!newItem.trim()) return;
+  useEffect(() => {
+    fetchTasks();
+  }, [fetchTasks]);
 
+  // Create or update task
+  const handleSubmitTask = async (taskData) => {
     try {
-      const response = await fetch('/api/items', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ name: newItem }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to add item');
+      if (editTask) {
+        // Update existing task
+        await axios.put(`/api/tasks/${editTask.id}`, taskData);
+        showSnackbar('Task updated successfully', 'success');
+      } else {
+        // Create new task
+        await axios.post('/api/tasks', taskData);
+        showSnackbar('Task created successfully', 'success');
       }
-
-      const result = await response.json();
-      setData([...data, result]);
-      setNewItem('');
+      fetchTasks();
     } catch (err) {
-      setError('Error adding item: ' + err.message);
-      console.error('Error adding item:', err);
+      showSnackbar('Failed to save task: ' + err.message, 'error');
+      console.error('Error saving task:', err);
     }
   };
 
-  const handleDelete = async (itemId) => {
+  // Toggle task completion
+  const handleToggleComplete = async (taskId) => {
     try {
-      const response = await fetch(`/api/items/${itemId}`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to delete item');
-      }
-
-      setData(data.filter(item => item.id !== itemId));
-      setError(null);
+      await axios.patch(`/api/tasks/${taskId}/complete`);
+      fetchTasks();
     } catch (err) {
-      setError('Error deleting item: ' + err.message);
-      console.error('Error deleting item:', err);
+      showSnackbar('Failed to update task: ' + err.message, 'error');
+      console.error('Error toggling task:', err);
     }
+  };
+
+  // Open edit dialog
+  const handleEdit = (task) => {
+    setEditTask(task);
+    setFormOpen(true);
+  };
+
+  // Open delete confirmation
+  const handleDeleteClick = (taskId) => {
+    setTaskToDelete(taskId);
+    setDeleteDialogOpen(true);
+  };
+
+  // Confirm delete
+  const handleConfirmDelete = async () => {
+    try {
+      await axios.delete(`/api/tasks/${taskToDelete}`);
+      showSnackbar('Task deleted successfully', 'success');
+      fetchTasks();
+    } catch (err) {
+      showSnackbar('Failed to delete task: ' + err.message, 'error');
+      console.error('Error deleting task:', err);
+    } finally {
+      setDeleteDialogOpen(false);
+      setTaskToDelete(null);
+    }
+  };
+
+  // Show snackbar notification
+  const showSnackbar = (message, severity = 'success') => {
+    setSnackbar({
+      open: true,
+      message,
+      severity,
+    });
+  };
+
+  // Close snackbar
+  const handleCloseSnackbar = () => {
+    setSnackbar({ ...snackbar, open: false });
+  };
+
+  // Open create task dialog
+  const handleOpenCreateDialog = () => {
+    setEditTask(null);
+    setFormOpen(true);
+  };
+
+  // Close task form dialog
+  const handleCloseForm = () => {
+    setFormOpen(false);
+    setEditTask(null);
+  };
+
+  // Handle filter changes
+  const handleFilterChange = (newFilters) => {
+    setFilters(newFilters);
   };
 
   return (
-    <div className="App">
-      <header className="App-header">
-        <h1>To Do App</h1>
-        <p>Keep track of your tasks</p>
-      </header>
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      
+      {/* App Bar */}
+      <AppBar position="static" elevation={2}>
+        <Toolbar>
+          <Typography variant="h5" component="h1" sx={{ fontWeight: 700 }}>
+            TODO App
+          </Typography>
+        </Toolbar>
+      </AppBar>
 
-      <main>
-        <section className="add-item-section">
-          <h2>Add New Item</h2>
-          <form onSubmit={handleSubmit}>
-            <input
-              type="text"
-              value={newItem}
-              onChange={(e) => setNewItem(e.target.value)}
-              placeholder="Enter item name"
-            />
-            <button type="submit">Add Item</button>
-          </form>
-        </section>
+      {/* Main Content */}
+      <Container maxWidth="md" sx={{ py: 4, pb: 10 }}>
+        <Box sx={{ mb: 3 }}>
+          <Typography variant="body1" color="text.secondary">
+            Keep track of your tasks and stay organized
+          </Typography>
+        </Box>
 
-        <section className="items-section">
-          <h2>Items from Database</h2>
-          {loading && <p>Loading data...</p>}
-          {error && <p className="error">{error}</p>}
-          {!loading && !error && (
-            <ul>
-              {data.length > 0 ? (
-                data.map((item) => (
-                  <li key={item.id}>
-                    <span>{item.name}</span>
-                    <button 
-                      onClick={() => handleDelete(item.id)}
-                      className="delete-btn"
-                      type="button"
-                    >
-                      Delete
-                    </button>
-                  </li>
-                ))
-              ) : (
-                <p>No items found. Add some!</p>
-              )}
-            </ul>
-          )}
-        </section>
-      </main>
-    </div>
+        {/* Filters */}
+        <TaskFilters filters={filters} onFilterChange={handleFilterChange} />
+
+        {/* Task List */}
+        <TaskList
+          tasks={tasks}
+          loading={loading}
+          error={error}
+          onToggleComplete={handleToggleComplete}
+          onEdit={handleEdit}
+          onDelete={handleDeleteClick}
+        />
+
+        {/* Floating Action Button */}
+        <Fab
+          color="secondary"
+          aria-label="Add task"
+          sx={{
+            position: 'fixed',
+            bottom: 24,
+            right: 24,
+          }}
+          onClick={handleOpenCreateDialog}
+        >
+          <AddIcon />
+        </Fab>
+
+        {/* Task Form Dialog */}
+        <TaskForm
+          open={formOpen}
+          onClose={handleCloseForm}
+          onSubmit={handleSubmitTask}
+          initialTask={editTask}
+        />
+
+        {/* Delete Confirmation Dialog */}
+        <ConfirmDialog
+          open={deleteDialogOpen}
+          title="Delete Task"
+          message="Are you sure you want to delete this task? This action cannot be undone."
+          onConfirm={handleConfirmDelete}
+          onCancel={() => setDeleteDialogOpen(false)}
+        />
+
+        {/* Snackbar for notifications */}
+        <Snackbar
+          open={snackbar.open}
+          autoHideDuration={4000}
+          onClose={handleCloseSnackbar}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        >
+          <Alert
+            onClose={handleCloseSnackbar}
+            severity={snackbar.severity}
+            variant="filled"
+            sx={{ width: '100%' }}
+          >
+            {snackbar.message}
+          </Alert>
+        </Snackbar>
+      </Container>
+    </ThemeProvider>
   );
 }
 
